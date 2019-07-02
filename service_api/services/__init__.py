@@ -1,7 +1,11 @@
 from dataclasses import dataclass
+from urllib.parse import urlencode
 
 import aiohttp
-from urllib.parse import urlencode
+import aioredis
+import ujson
+
+from service_api.domain.decorators import asyncio_task
 
 
 @dataclass
@@ -12,15 +16,54 @@ class ResponseWrapper:
     data: dict
 
 
+class RedisCacheManager:
+    conn = None
+
+    @classmethod
+    async def get_conn(cls, redis_url):
+        if not cls.conn:
+            cls.conn = await aioredis.create_redis(redis_url)
+
+    @classmethod
+    async def close_conn(cls):
+        if cls.conn:
+            cls.conn.close()
+            await cls.conn.wait_closed()
+
+    @classmethod
+    async def check_cache(cls, url, headers):
+        return await cls.conn.get(cls.__create_key(url, **headers))
+
+    @classmethod
+    @asyncio_task
+    async def cache_data(cls, url, headers, data, ttl=180):
+        key = cls.__create_key(url, **headers)
+        json = ujson.encode(data, ensure_ascii=False)
+        return await cls.conn.set(key, json, expire=ttl)
+
+    @staticmethod
+    def __create_key(url, **headers):
+        data = dict(url=url, **headers)
+        return hash(frozenset(data))
+
+
 class BaseRestClient:
     # 0 means that aiohttp will never interrupt connection by itself
     REQUEST_TIMEOUT = 0
     api_url = ''
+    __cache_manager = RedisCacheManager
 
     @classmethod
     async def get(cls, url, headers=None, **kwargs):
         params = urlencode(kwargs, True)
-        return await cls.__make_http_request('GET', url, headers, params=params)
+        request_url = f'{cls.api_url}/{url}?{params}'
+        cache = await cls.__cache_manager.check_cache(request_url, headers)
+        if cache:
+            return cache
+        else:
+            response = await cls.__make_http_request('GET', url, headers, params=params)
+            cls.__cache_manager.cache_data(request_url, headers, response.data)
+            return response
 
     @classmethod
     async def post(cls, url, headers=None, data=None):
@@ -41,7 +84,7 @@ class BaseRestClient:
 
     @classmethod
     async def __make_http_request(cls, method, url, headers, params=None, data=None):
-        request_url = f'{url}/{url}?{params}'
+        request_url = f'{cls.api_url}/{url}?{params}'
         async with aiohttp.ClientSession() as session:
             async with session.request(method=method, url=request_url, data=data, headers=headers,
                                        timeout=cls.REQUEST_TIMEOUT) as response:
