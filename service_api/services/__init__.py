@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from urllib.parse import urlencode
+from sanic.log import logger
 
 import aiohttp
 import aioredis
@@ -86,8 +87,10 @@ class BaseRestClient:
     async def __make_http_request(cls, method, url, headers, params=None, data=None):
         request_url = f'{cls.api_url}/{url}?{params}'
         async with aiohttp.ClientSession() as session:
+            logger.debug(f'Sending {method} request to {url}, headers: {headers}')
             async with session.request(method=method, url=request_url, data=data, headers=headers,
                                        timeout=cls.REQUEST_TIMEOUT) as response:
+                logger.debug(f'Got response from {request_url}, status {response.status}')
                 try:
                     resp_data = await response.json()
                 # type: ignore
