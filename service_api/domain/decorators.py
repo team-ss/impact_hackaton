@@ -1,10 +1,12 @@
 import asyncio
+from functools import wraps
 
 from sanic.log import logger
 
 
 def asyncio_task(coro):
-    def wrapper(*args, **kwargs):
+    @wraps(coro)
+    async def wrapper(*args, **kwargs):
         loop = asyncio.get_event_loop()
         task = loop.create_task(coro(*args, **kwargs))
         task.add_done_callback(check_exceptions)

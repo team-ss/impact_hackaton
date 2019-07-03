@@ -1,10 +1,10 @@
 from dataclasses import dataclass
 from urllib.parse import urlencode
-from sanic.log import logger
 
 import aiohttp
 import aioredis
 import ujson
+from sanic.log import logger
 
 from service_api.domain.decorators import asyncio_task
 
@@ -15,6 +15,10 @@ class ResponseWrapper:
     headers: dict
     status: int
     data: dict
+
+    @property
+    def ok(self):
+        return self.status // 200 == 1
 
 
 class RedisCacheManager:
@@ -37,9 +41,14 @@ class RedisCacheManager:
 
     @classmethod
     @asyncio_task
-    async def cache_data(cls, url, headers, data, ttl=180):
-        key = cls.__create_key(url, **headers)
-        json = ujson.encode(data, ensure_ascii=False)
+    async def cache_data(cls, url, request_headers, response, ttl=180):
+        key = cls.__create_key(url, **request_headers)
+        hash_data = {
+            'status': response.status,
+            'headers': response.headers,
+            'data': response.data
+        }
+        json = ujson.encode(hash_data, ensure_ascii=False)
         return await cls.conn.set(key, json, expire=ttl)
 
     @staticmethod
@@ -60,11 +69,13 @@ class BaseRestClient:
         request_url = f'{cls.api_url}/{url}?{params}'
         cache = await cls.__cache_manager.check_cache(request_url, headers)
         if cache:
-            return ujson.decode(cache, 'UTF-8')
+            cache_data = ujson.decode(cache, 'UTF-8')
+            return ResponseWrapper(request_url=request_url, headers=cache_data['headers'], status=cache_data['status'],
+                                   data=cache_data['data'])
         else:
             response = await cls.__make_http_request('GET', url, headers, params=params)
-            if response.status == 200:
-                cls.__cache_manager.cache_data(request_url, headers, response.data)
+            if response.ok:
+                await cls.__cache_manager.cache_data(request_url, headers, response)
             return response
 
     @classmethod
