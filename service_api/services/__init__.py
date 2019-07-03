@@ -60,10 +60,11 @@ class BaseRestClient:
         request_url = f'{cls.api_url}/{url}?{params}'
         cache = await cls.__cache_manager.check_cache(request_url, headers)
         if cache:
-            return cache
+            return ujson.decode(cache, 'UTF-8')
         else:
             response = await cls.__make_http_request('GET', url, headers, params=params)
-            cls.__cache_manager.cache_data(request_url, headers, response.data)
+            if response.status % 200 < 0:
+                cls.__cache_manager.cache_data(request_url, headers, response.data)
             return response
 
     @classmethod
