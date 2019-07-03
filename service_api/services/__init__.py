@@ -63,7 +63,7 @@ class BaseRestClient:
             return ujson.decode(cache, 'UTF-8')
         else:
             response = await cls.__make_http_request('GET', url, headers, params=params)
-            if response.status % 200 < 0:
+            if response.status == 200:
                 cls.__cache_manager.cache_data(request_url, headers, response.data)
             return response
 
