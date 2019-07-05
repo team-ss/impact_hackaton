@@ -2,7 +2,7 @@ from typing import Optional
 
 import asyncpg
 import asyncpgsa
-from sqlalchemy.schema import CreateTable
+from sqlalchemy.schema import CreateTable, DropTable
 
 from constans import DEFAULT_DB_NAME
 from service_api.domain.models import models
@@ -27,6 +27,14 @@ async def drop_db(host: str, port: int, user: str, password: Optional[str] = Non
         pass
     finally:
         await conn.close()
+
+
+async def drop_tables(db_uri: str) -> None:
+    pool = await asyncpgsa.create_pool(db_uri)
+    async with pool.acquire() as conn:
+        for table in models:
+            q = DropTable(table)
+            await conn.execute(q)
 
 
 async def init_db(db_uri: str) -> None:

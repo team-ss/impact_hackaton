@@ -5,7 +5,7 @@ import pytest
 
 sys.path.append(os.path.join(os.path.abspath(os.path.dirname(__file__)), ".."))
 
-from service_api.domain.commands import create_db, drop_db
+from service_api.domain.commands import create_db, drop_db, init_db
 
 
 @pytest.yield_fixture
@@ -23,8 +23,9 @@ def test_cli(loop, app, sanic_client):
 def setup_db(loop):
     host = os.getenv('DB_HOST', 'localhost')
     port = os.getenv('DB_PORT', 5432)
-    user = os.getenv('DB_USER')
+    user = os.getenv('DB_USER', 'postgres')
     password = os.getenv('DB_PASSWORD')
-    os.environ['DB_NAME'] = 'test'
+    name = os.getenv('DB_NAME')
+    uri = f'postgresql://{host}:{password}@{port}:{user}/{name}'
     loop.run_until_complete(drop_db(host=host, port=port, user=user, password=password, name='test'))
-    loop.run_until_complete(create_db(host=host, port=port, user=user, password=password, name='test'))
+    loop.run_until_complete(init_db(uri))

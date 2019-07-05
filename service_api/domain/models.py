@@ -1,5 +1,7 @@
-from sqlalchemy import MetaData
+from sqlalchemy import MetaData, Table
+
+from typing import List
 
 metadata = MetaData()
 
-models = []
+models: List[Table] = []
