@@ -4,8 +4,7 @@ import sys
 import pytest
 
 sys.path.append(os.path.join(os.path.abspath(os.path.dirname(__file__)), ".."))
-
-from service_api.domain.commands import create_db, drop_db, init_db
+from service_api.domain.commands import create_db, drop_db, init_db, drop_tables
 
 
 @pytest.yield_fixture
@@ -21,11 +20,16 @@ def test_cli(loop, app, sanic_client):
 
 @pytest.fixture(autouse=True)
 def setup_db(loop):
+    name = 'test' or os.getenv('DB_NAME')
     host = os.getenv('DB_HOST', 'localhost')
     port = os.getenv('DB_PORT', 5432)
     user = os.getenv('DB_USER', 'postgres')
     password = os.getenv('DB_PASSWORD')
-    name = os.getenv('DB_NAME')
-    uri = f'postgresql://{host}:{password}@{port}:{user}/{name}'
-    loop.run_until_complete(drop_db(host=host, port=port, user=user, password=password, name='test'))
-    loop.run_until_complete(init_db(uri))
+    uri = os.getenv('DATABASE_URI', f'postgresql://{host}:{password}@{port}:{user}/{name}')
+    if not os.getenv('TRAVIS'):
+        loop.run_until_complete(drop_db(host=host, port=port, user=user, password=password, name=name))
+        loop.run_until_complete(create_db(host=host, port=port, user=user, password=password, name=name))
+        os.environ['DB_NAME'] = name
+    else:
+        loop.run_until_complete(drop_tables(uri))
+        loop.run_until_complete(init_db(uri))
