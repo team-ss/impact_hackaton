@@ -2,6 +2,8 @@ dist: xenial
 language: python
 python:
   - "3.7"
+addons:
+  postgresql: "11"
 services:
   - redis-server
 install:

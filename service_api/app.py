@@ -1,4 +1,5 @@
 from sanic import Sanic
+from asyncpgsa import pg
 
 from service_api import api
 from service_api.config import AppConfig
@@ -11,8 +12,9 @@ api.load_api(app)
 
 
 @app.listener('before_server_start')
-async def setup_redis(app, loop):
+async def setup_db(app, loop):
     await RedisCacheManager.get_conn(app.config.REDIS_URL)
+    await pg.init(app.config.DB_URI)
 
 
 @app.listener('before_server_stop')
