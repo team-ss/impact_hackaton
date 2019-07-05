@@ -6,6 +6,7 @@ addons:
   postgresql: "11"
 services:
   - redis-server
+  - postgresql
 before_script:
   - psql -c "CREATE DATABASE testing_db;" -U postgres
   - export DB_NAME=testing_db
