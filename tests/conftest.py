@@ -25,7 +25,7 @@ def setup_db(loop):
     port = os.getenv('DB_PORT', 5432)
     user = os.getenv('DB_USER', 'postgres')
     password = os.getenv('DB_PASSWORD')
-    uri = os.getenv('DATABASE_URI', f'postgresql://{host}:{password}@{port}:{user}/{name}')
+    uri = os.getenv('DATABASE_URI', f'postgresql://{user}:{password}@{host}:{port}/{name}')
     if not os.getenv('TRAVIS'):
         loop.run_until_complete(drop_db(host=host, port=port, user=user, password=password, name=name))
         loop.run_until_complete(create_db(host=host, port=port, user=user, password=password, name=name))
