@@ -46,11 +46,11 @@ async def init_db(db_uri: str) -> None:
         for table in models:
             q = CreateTable(table)
             await conn.execute(q)
-            await load_data(conn, POLLUTION_DATA_FILENAME)
+        await load_data(conn, POLLUTION_DATA_FILENAME)
 
 
-async def load_data(conn, file_name):
-    data = dict_from_json_file(file_name) or {}
+async def load_data(conn, filename):
+    data = dict_from_json_file(filename) or {}
     sample_data = data.get('data', {})
     for table in models:
         records = sample_data[0].get(table.name, list())
@@ -59,7 +59,7 @@ async def load_data(conn, file_name):
 
 
 def dict_from_json_file(filename):
-    filename = os.path.join(os.path.join(os.path.dirname(__file__), 'files'), filename)
+    file_name = os.path.join(os.path.join(os.path.dirname(__file__), 'files'), filename)
 
     def _model_convert(dct):
         for key, value in dct.items():
@@ -67,5 +67,5 @@ def dict_from_json_file(filename):
                 dct[key] = str(value)
         return dct
 
-    with open(filename) as fin:
+    with open(file_name) as fin:
         return json.load(fin, object_hook=_model_convert)
