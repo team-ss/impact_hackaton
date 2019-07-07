@@ -3,9 +3,9 @@ import json
 from tests import BaseTestCase
 
 
-class RouteResourceTest(BaseTestCase):
+class DirectionResourceTest(BaseTestCase):
 
-    def test_route_resource_success(self):
+    def test_direction_resource_success(self):
         body = {
             "start_city": "10.2",
             "end_city": "30.2",

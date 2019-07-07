@@ -3,11 +3,11 @@ from http import HTTPStatus
 from sanic.response import json
 
 from service_api.resources import BaseResource
-from service_api.domain.forms import RouteForm
+from service_api.domain.forms import DirectionForm
 
 
-class RouteResource(BaseResource):
+class DirectionResource(BaseResource):
 
     async def post(self, request):
-        data, _ = RouteForm().load(request.json)
+        data, _ = DirectionForm().load(request.json)
         return json(data, HTTPStatus.OK)

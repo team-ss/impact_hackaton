@@ -16,7 +16,7 @@ class BaseForm(Schema):
         abort(HTTPStatus.BAD_REQUEST, error)
 
 
-class RouteForm(BaseForm):
+class DirectionForm(BaseForm):
     start_city = CustomFloat(required=True)
     end_city = CustomFloat(required=True)
     date = fields.Date()
