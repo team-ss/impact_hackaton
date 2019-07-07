@@ -31,5 +31,6 @@ def setup_db(loop):
         loop.run_until_complete(create_db(host=host, port=port, user=user, password=password, name=name))
         os.environ['DB_NAME'] = name
     else:
-        loop.run_until_complete(drop_tables(uri))
+        loop.run_until_complete(drop_db(host=host, port=port, user=user, password=password, name=name))
+        loop.run_until_complete(create_db(host=host, port=port, user=user, password=password, name=name))
         loop.run_until_complete(init_db(uri))
