@@ -8,7 +8,7 @@ class AppConfig:
     DB_PORT = os.getenv('DB_PORT', '5432')
     DB_USER = os.getenv('DB_USER')
     DB_PASSWORD = os.getenv('DB_PASSWORD')
-    DB_NAME = os.getenv('DB_NAME', DEFAULT_DB_NAME)
+    DB_NAME = os.getenv('DB_NAME')
     DB_URI = os.getenv('DATABASE_URI', f'postgresql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}')
     REDIS_PASSWORD = os.getenv('REDIS_PASSWORD', '')
     REDIS_HOST = os.getenv('REDIS_HOST', 'localhost')
