@@ -19,4 +19,4 @@ class BaseForm(Schema):
 class DirectionForm(BaseForm):
     start_city = CustomFloat(required=True)
     end_city = CustomFloat(required=True)
-    date = fields.Date()
+    date = fields.Date(required=True)
