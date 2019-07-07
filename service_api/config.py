@@ -1,5 +1,7 @@
 import os
+
 from constans import DEFAULT_DB_NAME
+
 
 class AppConfig:
     DB_HOST = os.getenv('DB_HOST', 'localhost')
