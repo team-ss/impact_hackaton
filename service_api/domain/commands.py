@@ -1,5 +1,6 @@
 import json
 import os
+from contextlib import asynccontextmanager
 from typing import Optional
 
 import asyncpg
@@ -8,6 +9,31 @@ from sqlalchemy.schema import CreateTable, DropTable
 
 from constans import DEFAULT_DB_NAME, POLLUTION_DATA_FILENAME
 from service_api.domain.models import models
+
+
+def get_db_uri():
+    host, port, user, password, name = get_db_variables()
+    return f'postgresql://{user}:{password}@{host}:{port}/{name}'
+
+
+def get_db_variables():
+    host = os.getenv('DB_HOST', 'localhost')
+    port = os.getenv('DB_PORT', 5432)
+    user = os.getenv('DB_USER')
+    password = os.getenv('DB_PASSWORD')
+    name = os.getenv('DB_NAME')
+
+    return host, port, user, password, name
+
+
+@asynccontextmanager
+async def connection_pool(db_uri=get_db_uri()):
+    pool = await asyncpgsa.create_pool(db_uri)
+    conn = await pool.acquire()
+    try:
+        yield conn
+    finally:
+        conn.close()
 
 
 async def create_db(host: str, port: int, user: str, password: Optional[str] = None,
@@ -33,16 +59,14 @@ async def drop_db(host: str, port: int, user: str, password: Optional[str] = Non
 
 
 async def drop_tables(db_uri: str) -> None:
-    pool = await asyncpgsa.create_pool(db_uri)
-    async with pool.acquire() as conn:
+    async with connection_pool(db_uri) as conn:
         for table in models:
             q = DropTable(table)
             await conn.execute(q)
 
 
 async def init_db(db_uri: str) -> None:
-    pool = await asyncpgsa.create_pool(db_uri)
-    async with pool.acquire() as conn:
+    async with connection_pool(db_uri) as conn:
         for table in models:
             q = CreateTable(table)
             await conn.execute(q)
@@ -50,7 +74,7 @@ async def init_db(db_uri: str) -> None:
 
 
 async def load_data(conn, filename):
-    data = dict_from_json_file(filename) or {}
+    data = await dict_from_json_file(filename) or {}
     sample_data = data.get('data', {})
     for table in models:
         records = sample_data[0].get(table.name, list())
@@ -58,7 +82,7 @@ async def load_data(conn, filename):
             await conn.execute(table.insert().values(**record))
 
 
-def dict_from_json_file(filename):
+async def dict_from_json_file(filename):
     file_name = os.path.join(os.path.join(os.path.dirname(__file__), 'files'), filename)
 
     def _model_convert(dct):
