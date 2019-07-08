@@ -2,7 +2,7 @@ import json
 import os
 from typing import Dict
 
-from impact_hackaton.service_api.services import BaseRestClient
+from service_api.services import BaseRestClient
 
 
 class GoogleAPIClient(BaseRestClient):
