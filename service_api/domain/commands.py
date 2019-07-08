@@ -7,7 +7,7 @@ import asyncpg
 import asyncpgsa
 from sqlalchemy.schema import CreateTable, DropTable
 
-from constans import DEFAULT_DB_NAME, POLLUTION_DATA_FILENAME
+from constans import DEFAULT_DB_NAME, POLLUTION_DATA_FILENAME, INSERT_VALUES_LIMIT
 from service_api.domain.models import models
 
 
@@ -33,7 +33,7 @@ async def connection_pool(db_uri=get_db_uri()):
     try:
         yield conn
     finally:
-        conn.close()
+        await conn.close()
 
 
 async def create_db(host: str, port: int, user: str, password: Optional[str] = None,
@@ -59,14 +59,16 @@ async def drop_db(host: str, port: int, user: str, password: Optional[str] = Non
 
 
 async def drop_tables(db_uri: str) -> None:
-    async with connection_pool(db_uri) as conn:
+    pool = await asyncpgsa.create_pool(db_uri)
+    async with pool.acquire() as conn:
         for table in models:
             q = DropTable(table)
             await conn.execute(q)
 
 
 async def init_db(db_uri: str) -> None:
-    async with connection_pool(db_uri) as conn:
+    pool = await asyncpgsa.create_pool(db_uri)
+    async with pool.acquire() as conn:
         for table in models:
             q = CreateTable(table)
             await conn.execute(q)
@@ -78,8 +80,9 @@ async def load_data(conn, filename):
     sample_data = data.get('data', {})
     for table in models:
         records = sample_data[0].get(table.name, list())
-        for record in records:
-            await conn.execute(table.insert().values(**record))
+        while records:
+            await conn.execute(table.insert().values(records[:INSERT_VALUES_LIMIT]))
+            del records[:INSERT_VALUES_LIMIT]
 
 
 async def dict_from_json_file(filename):
