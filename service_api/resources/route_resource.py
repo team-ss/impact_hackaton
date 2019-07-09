@@ -11,6 +11,6 @@ class DirectionResource(BaseResource):
 
     async def post(self, request):
         data, _ = DirectionForm().load(request.json)
-        path = GoogleAPIClient.get_direction(origin=data['origin'],
-                                             destination=data['destination'])
+        path = await GoogleAPIClient.get_direction(origin=data['origin'],
+                                                   destination=data['destination'])
         return json(path, HTTPStatus.OK)
