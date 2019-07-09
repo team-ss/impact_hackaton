@@ -5,18 +5,14 @@ from sanic.exceptions import abort
 from sanic.log import logger
 
 
-class CustomFloat(fields.Float):
-    default_error_messages = {"invalid": "Not valid, must be float (coordinate)"}
-
-
 class BaseForm(Schema):
 
     def handle_error(self, error, data):
         logger.error(f"exception: {error} for request: {data}")
-        abort(HTTPStatus.BAD_REQUEST, error)
+        abort(HTTPStatus.UNPROCESSABLE_ENTITY, error)
 
 
 class DirectionForm(BaseForm):
-    origin = CustomFloat(required=True)
-    destination = CustomFloat(required=True)
-    date = fields.Date(required=True)
+    origin = fields.String(required=True)
+    destination = fields.String(required=True)
+    # date = fields.Date(required=True)
