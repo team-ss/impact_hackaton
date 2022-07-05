@@ -49,7 +49,7 @@ sanic-script==0.3
 six==1.12.0
 SQLAlchemy==1.3.5
 typed-ast==1.4.0
-ujson==1.35
+ujson==5.4.0
 urllib3==1.25.3
 uvloop==0.12.2
 wcwidth==0.1.7
